@@ -1,13 +1,86 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lookup games streams on Twitch</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <style>
+    .video-list {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .video-item {
+      margin: 10px;
+      width: 200px;
+    }
+    .video-item img {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Lookup games streams on Twitch</h1>
+
+    <div>
+      <a href="http://localhost:8000/login">
+        <button>Twitch login</button>
+      </a>
+    </div>
+
+    <input type="text" v-model="searchQuery" placeholder="Enter game's name">
+    <button @click="searchVideos">Search Videos</button>
+    <div class="video-list">
+      <div class="video-item" v-for="video in videos" :key="video.id">
+        <img :src="video.thumbnail_url" alt="Thumbnail">
+        <p>{{ video.title }}</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        searchQuery: '',
+        videos: []
+      },
+      methods: {
+        async searchVideos() {
+          if (this.searchQuery.trim() === '') {
+            this.videos = [];
+            return;
+          }
+
+          try {
+            // Get the game id
+            const gameIdUrl = `http://localhost:8000/api/get-game-id?game_name=${this.searchQuery}`;
+            const gameIdResponse = await fetch(gameIdUrl);
+            if (!gameIdResponse.ok) {
+              throw new Error('Failed to fetch game ID');
+            }
+            const gameIdData = await gameIdResponse.json();
+            const gameId = gameIdData.game_id;
+
+            // Look for videos by game id
+            const videosUrl = `http://localhost:8000/api/search-videos?game_id=${gameId}`;
+            const videosResponse = await fetch(videosUrl);
+            if (!videosResponse.ok) {
+              throw new Error('Failed to fetch videos');
+            }
+            const videosData = await videosResponse.json();
+            this.videos = videosData.videos.map(video => ({
+              id: video.id,
+              title: video.title,
+              thumbnail_url: video.thumbnail_url.replace('{width}', '320').replace('{height}', '180')
+            }));
+          } catch (error) {
+            console.error('Error while looking for videos:', error);
+          }
+        }
+      }
+    });
+  </script>
+</body>
 </html>
