@@ -17,6 +17,12 @@
     .video-item img {
       width: 100%;
     }
+    .pagination {
+      margin-top: 20px;
+    }
+    .pagination button {
+      margin: 0 5px;
+    }
   </style>
 </head>
 <body>
@@ -30,12 +36,16 @@
     </div>
 
     <input type="text" v-model="searchQuery" placeholder="Enter game's name">
-    <button @click="searchVideos">Search Videos</button>
+    <button @click="searchVideos(null)">Search Videos</button>
     <div class="video-list">
       <div class="video-item" v-for="video in videos" :key="video.id">
         <img :src="video.thumbnail_url" alt="Thumbnail">
         <p>{{ video.title }}</p>
       </div>
+    </div>
+    <div class="pagination">
+      <button @click="previousPage" :disabled="!pagination.previousCursor">Previous</button>
+      <button @click="nextPage" :disabled="!pagination.hasNext">Next</button>
     </div>
   </div>
 
@@ -44,10 +54,15 @@
       el: '#app',
       data: {
         searchQuery: '',
-        videos: []
+        videos: [],
+        pagination: {
+          previousCursor: null,
+          nextCursor: null,
+          hasNext: false
+        }
       },
       methods: {
-        async searchVideos() {
+        async searchVideos(cursor = null) {
           if (this.searchQuery.trim() === '') {
             this.videos = [];
             return;
@@ -64,7 +79,7 @@
             const gameId = gameIdData.game_id;
 
             // Look for videos by game id
-            const videosUrl = `http://localhost:8000/api/search-videos?game_id=${gameId}`;
+            const videosUrl = `http://localhost:8000/api/search-videos?game_id=${gameId}${cursor ? `&after=${cursor}` : ''}`;
             const videosResponse = await fetch(videosUrl);
             if (!videosResponse.ok) {
               throw new Error('Failed to fetch videos');
@@ -75,8 +90,23 @@
               title: video.title,
               thumbnail_url: video.thumbnail_url.replace('{width}', '320').replace('{height}', '180')
             }));
+
+            // Update pagination data
+            this.pagination.previousCursor = cursor;
+            this.pagination.nextCursor = videosData.pagination.cursor;
+            this.pagination.hasNext = !!videosData.pagination.cursor;
           } catch (error) {
             console.error('Error while looking for videos:', error);
+          }
+        },
+        nextPage() {
+          if (this.pagination.hasNext) {
+            this.searchVideos(this.pagination.nextCursor);
+          }
+        },
+        previousPage() {
+          if (this.pagination.previousCursor) {
+            this.searchVideos(this.pagination.previousCursor);
           }
         }
       }
