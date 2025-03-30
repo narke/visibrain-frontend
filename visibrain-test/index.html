@@ -16,6 +16,7 @@
     }
     .video-item img {
       width: 100%;
+      cursor: pointer;
     }
     .pagination {
       margin-top: 20px;
@@ -47,7 +48,7 @@
     <input type="text" v-model="searchQuery" placeholder="Enter game's name">
     <button @click="searchVideos(null)">Search Videos</button>
     <div class="video-list">
-      <div class="video-item" v-for="video in videos" :key="video.id">
+      <div class="video-item" v-for="video in videos" :key="video.id" @click="openVideo(video.url)">
         <div v-if="isPlaceholder(video.thumbnail_url)" class="placeholder">
           Thumbnail not available
         </div>
@@ -108,7 +109,8 @@
               return {
                 id: video.id,
                 title: video.title,
-                thumbnail_url: thumbnailUrl
+                thumbnail_url: thumbnailUrl,
+                url: `https://www.twitch.tv/videos/${video.id}`
               };
             });
 
@@ -132,6 +134,9 @@
         },
         isPlaceholder(url) {
           return url.includes('404_processing') || url.includes('%320x%180');
+        },
+        openVideo(url) {
+          window.open(url, '_blank');
         }
       }
     });
