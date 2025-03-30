@@ -23,6 +23,15 @@
     .pagination button {
       margin: 0 5px;
     }
+    .placeholder {
+      background-color: #ccc;
+      width: 100%;
+      height: 112.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+    }
   </style>
 </head>
 <body>
@@ -39,7 +48,10 @@
     <button @click="searchVideos(null)">Search Videos</button>
     <div class="video-list">
       <div class="video-item" v-for="video in videos" :key="video.id">
-        <img :src="video.thumbnail_url" alt="Thumbnail">
+        <div v-if="isPlaceholder(video.thumbnail_url)" class="placeholder">
+          Thumbnail not available
+        </div>
+        <img v-else :src="video.thumbnail_url" alt="Thumbnail">
         <p>{{ video.title }}</p>
       </div>
     </div>
@@ -84,12 +96,21 @@
             if (!videosResponse.ok) {
               throw new Error('Failed to fetch videos');
             }
+
             const videosData = await videosResponse.json();
-            this.videos = videosData.videos.map(video => ({
-              id: video.id,
-              title: video.title,
-              thumbnail_url: video.thumbnail_url.replace('{width}', '320').replace('{height}', '180')
-            }));
+
+            this.videos = videosData.videos.map(video => {
+              const thumbnailUrl = video.thumbnail_url
+                .replace('{width}', '320')
+                .replace('{height}', '180')
+                .replace('%320x%180', '320x180');
+
+              return {
+                id: video.id,
+                title: video.title,
+                thumbnail_url: thumbnailUrl
+              };
+            });
 
             // Update pagination data
             this.pagination.previousCursor = cursor;
@@ -108,6 +129,9 @@
           if (this.pagination.previousCursor) {
             this.searchVideos(this.pagination.previousCursor);
           }
+        },
+        isPlaceholder(url) {
+          return url.includes('404_processing') || url.includes('%320x%180');
         }
       }
     });
