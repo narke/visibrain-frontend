@@ -72,7 +72,8 @@
           previousCursor: null,
           nextCursor: null,
           hasNext: false
-        }
+        },
+        refreshInterval: null
       },
       methods: {
         async searchVideos(cursor = null) {
@@ -97,10 +98,9 @@
             if (!videosResponse.ok) {
               throw new Error('Failed to fetch videos');
             }
-
             const videosData = await videosResponse.json();
-
             this.videos = videosData.videos.map(video => {
+
               const thumbnailUrl = video.thumbnail_url
                 .replace('{width}', '320')
                 .replace('{height}', '180')
@@ -137,6 +137,16 @@
         },
         openVideo(url) {
           window.open(url, '_blank');
+        }
+      },
+      mounted() {
+        this.refreshInterval = setInterval(() => {
+          this.searchVideos(this.pagination.cursor);
+        }, 120000); // 2 minutes
+      },
+      beforeDestroy() {
+        if (this.refreshInterval) {
+          clearInterval(this.refreshInterval);
         }
       }
     });
