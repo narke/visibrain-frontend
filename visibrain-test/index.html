@@ -40,7 +40,7 @@
     <h1>Lookup games streams on Twitch</h1>
 
     <div>
-      <a href="http://localhost:8000/login">
+      <a :href="`${apiUrl}/login`">
         <button>Twitch login</button>
       </a>
     </div>
@@ -62,7 +62,9 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { API_URL } from './config.js';
+
     new Vue({
       el: '#app',
       data: {
@@ -73,7 +75,8 @@
           nextCursor: null,
           hasNext: false
         },
-        refreshInterval: null
+        refreshInterval: null,
+	apiUrl: API_URL
       },
       methods: {
         async searchVideos(cursor = null) {
@@ -84,7 +87,7 @@
 
           try {
             // Get the game id
-            const gameIdUrl = `http://localhost:8000/api/get-game-id?game_name=${this.searchQuery}`;
+	    const gameIdUrl = `${this.apiUrl}/api/get-game-id?game_name=${this.searchQuery}`;
             const gameIdResponse = await fetch(gameIdUrl);
             if (!gameIdResponse.ok) {
               throw new Error('Failed to fetch game ID');
@@ -93,7 +96,7 @@
             const gameId = gameIdData.game_id;
 
             // Look for videos by game id
-            const videosUrl = `http://localhost:8000/api/search-videos?game_id=${gameId}${cursor ? `&after=${cursor}` : ''}`;
+	    const videosUrl = `${this.apiUrl}/api/search-videos?game_id=${gameId}${cursor ? `&after=${cursor}` : ''}`;
             const videosResponse = await fetch(videosUrl);
             if (!videosResponse.ok) {
               throw new Error('Failed to fetch videos');
